@@ -14,6 +14,7 @@ const firebaseConfig = {
 };
 
 app.use(bodyParser());
+app.use("/nodejs",express.static(__dirname+"/assets"));
 firebase.initializeApp(firebaseConfig);
 
 app.get("/",(request, response)=>{
@@ -21,7 +22,7 @@ app.get("/",(request, response)=>{
 });
 
 app.get('/login',function (request, response){
-    response.sendFile(__dirname+"/login.html");    
+    response.sendFile(__dirname+"/files/login.html");    
 });
 
 app.post('/home',function (request, response){
@@ -48,13 +49,11 @@ app.post('/home',function (request, response){
     });*/
 
     var userReference = firebase.database().ref("admin");
-
-	//Attach an asynchronous callback to read the data
 	userReference.once("value", 
 			  function(snapshot) {
                    var user = snapshot.val();
-                    if(user.username==email && user.password==password){
-                        response.sendFile(__dirname+"/home.html");
+                    if(user.email==email && user.password==password){
+                        response.sendFile(__dirname+"/files/home.html");
                     }else{
                         response.send("Sign in error")
                     }
@@ -67,16 +66,38 @@ app.post('/home',function (request, response){
 			    });
 });
 
-app.get('/submit',function (request, response){
-    var link = request.query.link;
-    console.log("Link: "+link);
-    response.send("Data Submitted")
-    pushData(link);
+app.post('/submit',function (request, response){
+    var link = request.body.link;
+    var category = request.body.category;
+    var caption = request.body.caption;
+
+    firebase.database().ref('/data').child("youtube").push({
+        link: link,
+        category: category,
+        caption: caption
+    });
+
+    response.send("Data submitted successfully");
 });
 
-function pushData(link){
-    firebase.database().ref('/data').child("youtube").push({link: link});
-}
+
+
+app.get('/videolist',function (request, response){
+    
+    var userReference = firebase.database().ref("data/youtube");
+	userReference.once("value", 
+			  function(snapshot) {
+                   var videoItem = snapshot.val();
+                    
+			    }, 
+			    function (errorObject) {
+					console.log("The read failed: " + errorObject.code);
+					response.send("The read failed: " + errorObject.code);
+			    });
+    
+
+    response.send("Data submitted successfully");
+});
 
 var server = app.listen(8080, function () {
     var host = server.address().address;
